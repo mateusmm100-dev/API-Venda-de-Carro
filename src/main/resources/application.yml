@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: locadora-api
+  datasource:
+    url: jdbc:h2:mem:locadora;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: ${PORT:8080}
+
+gateway:
+  # Em desenvolvimento há um valor padrão; em produção use a variável de ambiente.
+  shared-secret: ${GATEWAY_SHARED_SECRET:dev-secret-troque-em-producao}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
