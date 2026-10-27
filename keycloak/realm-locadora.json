@@ -1,0 +1,97 @@
+{
+  "realm": "locadora",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "bruteForceProtected": true,
+  "failureFactor": 5,
+  "maxFailureWaitSeconds": 900,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      { "name": "CLIENTE", "description": "Consumidor final (B2C)" },
+      { "name": "STAFF", "description": "Atendente da locadora" },
+      { "name": "ADMIN", "description": "Gestor da locadora" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "locadora-api",
+      "name": "Locadora API (acessada via gateway)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true
+    },
+    {
+      "clientId": "gateway-admin",
+      "name": "Conta de servico do gateway (cadastro de usuarios)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "dev-gateway-admin-secret",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-gateway-admin",
+      "enabled": true,
+      "serviceAccountClientId": "gateway-admin",
+      "clientRoles": { "realm-management": ["manage-users", "view-users", "query-users"] }
+    },
+    {
+      "id": "b2c-cliente-001",
+      "username": "maria@email.com",
+      "email": "maria@email.com",
+      "firstName": "Maria",
+      "lastName": "Souza",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Senha@123", "temporary": false }],
+      "realmRoles": ["CLIENTE"]
+    },
+    {
+      "id": "b2c-cliente-002",
+      "username": "joao@email.com",
+      "email": "joao@email.com",
+      "firstName": "João",
+      "lastName": "Lima",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Senha@123", "temporary": false }],
+      "realmRoles": ["CLIENTE"]
+    },
+    {
+      "id": "b2c-staff-001",
+      "username": "ana@locadora.com",
+      "email": "ana@locadora.com",
+      "firstName": "Ana",
+      "lastName": "Atendente",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Senha@123", "temporary": false }],
+      "realmRoles": ["STAFF"]
+    },
+    {
+      "id": "b2c-admin-001",
+      "username": "carlos@locadora.com",
+      "email": "carlos@locadora.com",
+      "firstName": "Carlos",
+      "lastName": "Gestor",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Senha@123", "temporary": false }],
+      "realmRoles": ["ADMIN"]
+    }
+  ]
+}
