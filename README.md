@@ -7,12 +7,12 @@ na identidade que o gateway repassa e aplica as permissões por perfil).
 Esta pasta contém a parte do **Integrante 2**: recursos (carros, aluguéis, usuários), endpoints,
 validação de permissões por perfil, tratamento de erros e validação de entrada.
 
-- **Stack:** Java 17, Spring Boot 3.2.5, Spring Security, Spring Data JPA, Bean Validation, Lombok
+- **Stack:** Java 25, Spring Boot 3.2.5, Spring Security, Spring Data JPA, Bean Validation, Lombok
 - **Banco:** H2 em memória (desenvolvimento/testes) e PostgreSQL (perfil `prod`)
 
 ## Como rodar localmente
 
-Pré-requisitos: JDK 17 e Maven 3.9+.
+Pré-requisitos: JDK 25 e Maven 3.9+.
 
 ```bash
 mvn spring-boot:run          # sobe em http://localhost:8080 com H2 e dados de exemplo
