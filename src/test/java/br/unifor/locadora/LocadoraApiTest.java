@@ -1,7 +1,10 @@
 package br.unifor.locadora;
 
+import br.unifor.locadora.integracao.FipeResponse;
+import br.unifor.locadora.integracao.FipeService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -13,6 +16,7 @@ import java.time.LocalDate;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.when;
 
 /**
  * Testa autenticação via gateway, permissões por perfil e regras de negócio.
@@ -26,6 +30,9 @@ class LocadoraApiTest {
 
     @Autowired
     MockMvc mvc;
+
+    @MockBean
+    FipeService fipeService;
 
     /** Simula o gateway: injeta o segredo compartilhado e a identidade já validada. */
     private static RequestPostProcessor como(String externalId, String role) {
@@ -106,6 +113,34 @@ class LocadoraApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isNotEmpty())
                 .andExpect(jsonPath("$[?(@.status != 'DISPONIVEL')]").isEmpty());
+    }
+
+    @Test
+    void detalhesCombinaCarroLocalComDadosDaFipe() throws Exception {
+        when(fipeService.consultar("Chevrolet", "Onix", 2023))
+                .thenReturn(new FipeResponse(true, "Chevrolet", "Onix 1.0", 2023,
+                        "R$ 75.000,00", "outubro de 2026", "004504-3", null));
+
+        mvc.perform(get("/carros/1/detalhes").with(como(CLIENTE, "CLIENTE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.carro.id").value(1))
+                .andExpect(jsonPath("$.carro.modelo").value("Onix"))
+                .andExpect(jsonPath("$.fipe.disponivel").value(true))
+                .andExpect(jsonPath("$.fipe.valor").value("R$ 75.000,00"));
+    }
+
+    @Test
+    void detalhesPreservaDadosLocaisQuandoFipeIndisponivel() throws Exception {
+        when(fipeService.consultar("Chevrolet", "Onix", 2023))
+                .thenReturn(new FipeResponse(false, null, null, null, null, null, null,
+                        "Não foi possível consultar a FIPE no momento."));
+
+        mvc.perform(get("/carros/1/detalhes").with(como(CLIENTE, "CLIENTE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.carro.id").value(1))
+                .andExpect(jsonPath("$.fipe.disponivel").value(false))
+                .andExpect(jsonPath("$.fipe.mensagem")
+                        .value("Não foi possível consultar a FIPE no momento."));
     }
 
     @Test
