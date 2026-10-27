@@ -1,11 +1,9 @@
 package br.unifor.locadora.controller;
 
 import br.unifor.locadora.domain.CarroStatus;
-import br.unifor.locadora.dto.CarroDetalhesResponse;
 import br.unifor.locadora.dto.CarroRequest;
 import br.unifor.locadora.dto.CarroResponse;
 import br.unifor.locadora.dto.CarroStatusRequest;
-import br.unifor.locadora.integracao.FipeService;
 import br.unifor.locadora.security.AuthenticatedUser;
 import br.unifor.locadora.service.CarroService;
 import jakarta.validation.Valid;
@@ -25,80 +23,44 @@ import java.util.List;
 public class CarroController {
 
     private final CarroService service;
-    private final FipeService fipeService;
 
     /** CLIENTE, STAFF, ADMIN. Cliente vê apenas carros disponíveis. */
     @GetMapping
-    public List<CarroResponse> listar(
-            @AuthenticationPrincipal AuthenticatedUser usuario,
-            @RequestParam(required = false) CarroStatus status) {
-
+    public List<CarroResponse> listar(@AuthenticationPrincipal AuthenticatedUser usuario,
+                                      @RequestParam(required = false) CarroStatus status) {
         return service.listar(usuario, status);
     }
 
     @GetMapping("/{id}")
-    public CarroResponse buscar(
-            @PathVariable Long id,
-            @AuthenticationPrincipal AuthenticatedUser usuario) {
-
+    public CarroResponse buscar(@PathVariable Long id, @AuthenticationPrincipal AuthenticatedUser usuario) {
         return service.buscar(id, usuario);
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CarroResponse> criar(
-            @Valid @RequestBody CarroRequest req) {
-
+    public ResponseEntity<CarroResponse> criar(@Valid @RequestBody CarroRequest req) {
         CarroResponse criado = service.criar(req);
-
         URI local = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(criado.id())
-                .toUri();
-
+                .path("/{id}").buildAndExpand(criado.id()).toUri();
         return ResponseEntity.created(local).body(criado);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public CarroResponse atualizar(
-            @PathVariable Long id,
-            @Valid @RequestBody CarroRequest req) {
-
+    public CarroResponse atualizar(@PathVariable Long id, @Valid @RequestBody CarroRequest req) {
         return service.atualizar(id, req);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> remover(@PathVariable Long id) {
-
         service.remover(id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
-    public CarroResponse alterarStatus(
-            @PathVariable Long id,
-            @Valid @RequestBody CarroStatusRequest req) {
-
+    public CarroResponse alterarStatus(@PathVariable Long id, @Valid @RequestBody CarroStatusRequest req) {
         return service.alterarStatus(id, req.status());
-    }
-
-    // NOVO ENDPOINT: consulta os detalhes do carro e seu preço na FIPE.
-    @GetMapping("/{id}/detalhes")
-    public CarroDetalhesResponse detalhes(
-            @PathVariable Long id,
-            @AuthenticationPrincipal AuthenticatedUser usuario) {
-
-        CarroResponse carro = service.buscar(id, usuario);
-
-        var fipe = fipeService.consultar(
-                carro.marca(),
-                carro.modelo(),
-                carro.ano()
-        );
-
-        return new CarroDetalhesResponse(carro, fipe);
     }
 }
