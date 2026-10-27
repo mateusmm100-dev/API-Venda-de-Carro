@@ -1,0 +1,37 @@
+# Sobe tudo local: Keycloak (provedor B2C) + backend + gateway.
+# Uso:  docker compose up --build
+#   Gateway (única porta pública da API): http://localhost:8000
+#   Keycloak (console admin):             http://localhost:8180  (admin / admin)
+# O backend NÃO publica porta: só o gateway consegue alcançá-lo.
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./keycloak/realm-locadora.json:/opt/keycloak/data/import/realm-locadora.json:ro
+
+  backend:
+    build: .
+    environment:
+      GATEWAY_SHARED_SECRET: ${GATEWAY_SHARED_SECRET:-dev-secret-troque-em-producao}
+    # sem "ports": inacessível de fora da rede do compose
+
+  gateway:
+    build: ./gateway
+    depends_on:
+      - keycloak
+      - backend
+    environment:
+      KEYCLOAK_URL: http://keycloak:8080
+      BACKEND_URL: http://backend:8080
+      GATEWAY_SHARED_SECRET: ${GATEWAY_SHARED_SECRET:-dev-secret-troque-em-producao}
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-dev-gateway-admin-secret}
+    ports:
+      - "8000:8000"
