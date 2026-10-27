@@ -5,7 +5,7 @@ Autenticação do projeto: **Gateway de API B2C** (o gateway autentica o cliente
 na identidade que o gateway repassa e aplica as permissões por perfil).
 
 - **Stack:** Java 21, Spring Boot 3.2.5, Spring Security, Spring Data JPA, Bean Validation, Lombok
-- **Banco:** H2 em memória (desenvolvimento/testes) e PostgreSQL (perfil `prod`)
+- **Banco:** H2 em memória (desenvolvimento/testes) e PostgreSQL com migrações Flyway (perfil `prod`)
 
 ## Como rodar localmente
 
@@ -149,6 +149,22 @@ O `DataSeeder` é executado somente fora do perfil `prod` e só popula uma base 
 os usuários e dados de demonstração devem ser preparados de forma controlada; não dependa do seed
 local para popular a base publicada.
 
+### Schema e dados do PostgreSQL de produção
+
+Com `SPRING_PROFILES_ACTIVE=prod`, o Flyway executa as migrações versionadas em
+`src/main/resources/db/migration` antes de a aplicação iniciar. A migração `V1` cria as tabelas
+`usuarios`, `carros` e `alugueis`, suas chaves e índices. O Hibernate usa `ddl-auto: validate` em
+produção: confere o schema, mas não cria nem altera tabelas. Não edite uma migração que já foi
+aplicada; adicione outra com a próxima versão (`V2__...sql`).
+
+O seed automático permanece desligado em `prod`. Para preparar a demonstração, primeiro publique o
+Keycloak com contas de teste e atribua explicitamente os papéis apropriados; depois, pelo gateway,
+use a conta ADMIN para cadastrar pelo menos três carros via `POST /carros`. Faça login com contas
+CLIENTE para que seus perfis locais sejam criados no primeiro acesso e complete CPF/telefone/CNH
+por `PUT /usuarios/me` antes de criar aluguéis. Crie os aluguéis de demonstração usando
+`POST /alugueis`. Use apenas dados fictícios autorizados para a apresentação e não coloque senhas,
+CPF/CNH reais ou dados pessoais no Git.
+
 ## Exemplos de requisição
 
 Simulando o gateway com `curl` (substitua o segredo se mudou):
@@ -248,7 +264,7 @@ src/main/java/br/unifor/locadora
   requisições somente do gateway. Se a plataforma não oferecer rede privada, mantenha o segredo fora
   do repositório e rotacione-o imediatamente se houver suspeita de vazamento.
 - Rate limiting e expiração de sessão são responsabilidade do gateway (Integrante 1).
-- Schema gerado por `ddl-auto: update`; antes de uso real em produção, migre para Flyway/Liquibase.
+- Em produção, o schema é gerenciado por Flyway; revise e teste novas migrações antes de publicá-las.
 - Dois primeiros acessos simultâneos do mesmo usuário podem gerar um 409 transitório (tente novamente).
 - A FIPE é uma dependência externa: timeout, mudanças no serviço ou indisponibilidade podem deixar
   os dados `fipe` indisponíveis, sem impedir o retorno dos dados locais do carro.
@@ -267,7 +283,9 @@ Crie um PostgreSQL no Render e guarde o host, nome do banco, usuário e senha. N
 (`jdbc:postgresql://<host-interno>:5432/<nome-do-banco>`), além de `DATABASE_USER` e
 `DATABASE_PASSWORD`. A URL de conexão copiada do Render pode usar outro formato; não a cole sem
 adaptá-la ao formato JDBC acima. Use o endereço interno quando backend e banco estiverem na mesma
-região/rede.
+região/rede. Na primeira inicialização do backend, Flyway cria o schema usando a migração V1;
+confirme nos logs que a migração foi aplicada e que o serviço iniciou com sucesso antes de cadastrar
+os dados de demonstração controladamente.
 
 ### 2. Backend
 
